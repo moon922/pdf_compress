@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DocuCompress - 웹 기반 PDF 무료 용량 줄이기 (보안/무설치)</title>
+    <meta name="description" content="서버 전송 없이 브라우저에서 100% 안전하고 빠르게 PDF 파일 용량을 줄여주는 무료 웹 애플리케이션입니다.">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <!-- PDF.js CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    </script>
+    
+    <!-- PDF-Lib CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+    
+    <!-- JSZip & FileSaver CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+</head>
+<body>
+    <div class="background-glow">
+        <div class="glow-sphere sphere-1"></div>
+        <div class="glow-sphere sphere-2"></div>
+        <div class="glow-sphere sphere-3"></div>
+    </div>
+
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="logo">
+                <i class="fa-solid fa-file-pdf logo-icon"></i>
+                <span class="logo-text">Docu<span class="gradient-text">Compress</span></span>
+                <span class="badge-privacy"><i class="fa-solid fa-shield-halved"></i> 100% 로컬 보안</span>
+            </div>
+            <p class="subtitle">서버 전송 없이 내 브라우저에서 안전하고 빠르게 PDF 파일 용량을 최적화하세요.</p>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="main-content">
+            <!-- Dropzone & Upload Section -->
+            <section id="upload-section" class="card dropzone-card">
+                <div class="dropzone" id="dropzone">
+                    <input type="file" id="file-input" accept="application/pdf" multiple hidden>
+                    <div class="dropzone-content">
+                        <div class="icon-circle">
+                            <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                        </div>
+                        <h3>PDF 파일을 이곳에 드래그하거나 클릭하여 선택하세요</h3>
+                        <p class="dropzone-hint">여러 개의 PDF 파일을 한 번에 선택하여 일괄 압축할 수 있습니다.</p>
+                        <button class="btn btn-primary btn-lg" id="btn-select-file">
+                            <i class="fa-solid fa-folder-open"></i> PDF 파일 선택하기
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- File List & Compression Settings Section (Hidden by default) -->
+            <section id="workspace-section" class="card workspace-card hidden">
+                <div class="workspace-header">
+                    <div class="section-title">
+                        <i class="fa-solid fa-sliders"></i>
+                        <h2>압축 설정 및 파일 목록</h2>
+                    </div>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary btn-sm" id="btn-add-more">
+                            <i class="fa-solid fa-plus"></i> 파일 추가
+                        </button>
+                        <button class="btn btn-outline-danger btn-sm" id="btn-clear-all">
+                            <i class="fa-solid fa-trash-can"></i> 전체 삭제
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Settings Bar -->
+                <div class="settings-panel">
+                    <div class="preset-selector">
+                        <label class="setting-label">압축 강도 선택</label>
+                        <div class="preset-options">
+                            <button class="preset-btn" data-preset="light">
+                                <div class="preset-icon"><i class="fa-solid fa-feather-pointed"></i></div>
+                                <div class="preset-info">
+                                    <span class="preset-title">일반 압축</span>
+                                    <span class="preset-desc">고화질 유지 (150 DPI)</span>
+                                </div>
+                            </button>
+                            <button class="preset-btn active" data-preset="recommended">
+                                <div class="preset-badge">추천</div>
+                                <div class="preset-icon"><i class="fa-solid fa-bolt"></i></div>
+                                <div class="preset-info">
+                                    <span class="preset-title">권장 압축</span>
+                                    <span class="preset-desc">화질과 용량의 최적 균형 (110 DPI)</span>
+                                </div>
+                            </button>
+                            <button class="preset-btn" data-preset="extreme">
+                                <div class="preset-icon"><i class="fa-solid fa-compress"></i></div>
+                                <div class="preset-info">
+                                    <span class="preset-title">최대 압축</span>
+                                    <span class="preset-desc">용량 최소화 (80 DPI)</span>
+                                </div>
+                            </button>
+                            <button class="preset-btn" data-preset="custom">
+                                <div class="preset-icon"><i class="fa-solid fa-sliders"></i></div>
+                                <div class="preset-info">
+                                    <span class="preset-title">사용자 지정</span>
+                                    <span class="preset-desc">DPI 및 이미지 품질 직접 조절</span>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Custom Settings Controls (Hidden unless Custom selected) -->
+                    <div id="custom-controls" class="custom-controls hidden">
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <label for="range-dpi"><i class="fa-solid fa-image"></i> 해상도 (DPI): <span id="val-dpi">110</span> DPI</label>
+                            </div>
+                            <input type="range" id="range-dpi" min="60" max="200" step="5" value="110">
+                        </div>
+                        <div class="slider-group">
+                            <div class="slider-header">
+                                <label for="range-quality"><i class="fa-solid fa-gauge-high"></i> 이미지 품질: <span id="val-quality">65</span>%</label>
+                            </div>
+                            <input type="range" id="range-quality" min="10" max="95" step="5" value="65">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Selected Files List -->
+                <div class="file-list-container">
+                    <div class="list-header">
+                        <span>업로드된 파일 (<span id="file-count">0</span>개)</span>
+                        <span id="total-original-size">총 용량: 0 MB</span>
+                    </div>
+                    <div class="file-list" id="file-list">
+                        <!-- File item templates inserted dynamically -->
+                    </div>
+                </div>
+
+                <!-- Action Footer -->
+                <div class="workspace-footer">
+                    <button class="btn btn-accent btn-xl" id="btn-start-compress">
+                        <i class="fa-solid fa-bolt-lightning"></i> PDF 압축 시작하기
+                    </button>
+                </div>
+            </section>
+
+            <!-- Processing / Progress Section -->
+            <section id="processing-section" class="card processing-card hidden">
+                <div class="processing-content">
+                    <div class="spinner-wrapper">
+                        <div class="pulse-ring"></div>
+                        <i class="fa-solid fa-file-pdf processing-icon"></i>
+                    </div>
+                    <h3 id="progress-status-title">PDF 파일 압축 진행 중...</h3>
+                    <p id="progress-status-subtitle" class="progress-sub">페이지를 렌더링하고 스트림을 최적화하는 중입니다.</p>
+
+                    <div class="progress-bar-container">
+                        <div class="progress-bar-fill" id="progress-bar-fill" style="width: 0%;"></div>
+                    </div>
+                    <div class="progress-info">
+                        <span id="progress-current-file">파일 처리 중...</span>
+                        <span id="progress-percentage">0%</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Results Section -->
+            <section id="results-section" class="card results-card hidden">
+                <div class="results-header">
+                    <div class="success-badge">
+                        <i class="fa-solid fa-circle-check"></i> 압축 완료!
+                    </div>
+                    <h2>PDF 용량이 성공적으로 축소되었습니다</h2>
+                    <div class="total-saved-banner" id="total-saved-banner">
+                        <span class="saved-label">전체 절감 결과</span>
+                        <div class="saved-numbers">
+                            <span class="size-before" id="sum-before">10.0 MB</span>
+                            <i class="fa-solid fa-arrow-right"></i>
+                            <span class="size-after" id="sum-after">2.5 MB</span>
+                            <span class="savings-chip" id="sum-percentage">-75%</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Results File List -->
+                <div class="results-list" id="results-list">
+                    <!-- Dynamic result items inserted here -->
+                </div>
+
+                <div class="results-actions">
+                    <button class="btn btn-secondary btn-lg" id="btn-compress-more">
+                        <i class="fa-solid fa-rotate-left"></i> 다른 파일 압축하기
+                    </button>
+                    <button class="btn btn-primary btn-lg" id="btn-download-all">
+                        <i class="fa-solid fa-file-zipper"></i> 전체 파일 (ZIP) 다운로드
+                    </button>
+                </div>
+            </section>
+
+            <!-- Feature Highlights Section -->
+            <section class="features-section">
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-user-shield"></i></div>
+                    <h4>완벽한 개인정보 보호</h4>
+                    <p>문서가 서버로 업로드되지 않고 사용자의 웹 브라우저 내에서 100% 처리되어 유출 걱정이 없습니다.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-bolt"></i></div>
+                    <h4>초고속 렌더링</h4>
+                    <p>최신 WebAssembly 및 HTML5 Canvas 기술을 활용하여 대용량 PDF도 빠르게 압축합니다.</p>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon"><i class="fa-solid fa-sliders"></i></div>
+                    <h4>세밀한 품질 제어</h4>
+                    <p>원하는 용량과 화질에 맞춰 DPI 및 JPEG 압축율을 자유롭게 맞춤 설정할 수 있습니다.</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="app-footer">
+            <p>© 2026 DocuCompress. Powered by PDF.js & PDF-Lib. All processing happens locally in your browser.</p>
+        </footer>
+    </div>
+
+    <!-- JS Modules -->
+    <script src="js/pdf-compressor.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
